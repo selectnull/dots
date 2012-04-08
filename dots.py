@@ -9,6 +9,15 @@ def print_list(*l):
     for x in l:
         print(x)
 
+class File(object):
+    def __init__(self, filename, full_filename, status):
+        self.filename = filename
+        self.full_filename = full_filename
+        self.status = status
+
+    def __str__(self):
+        return '{0:<4} {1}'.format(self.status, self.filename)
+
 class Repository(object):
     def __init__(self, path):
         self.path = os.path.abspath(path)
@@ -22,6 +31,7 @@ class Repository(object):
         return None
 
     def get_files(self):
+        files = []
         for fn in os.listdir(self.path):
             file_status = ''
             file_basename = os.path.basename(fn)
@@ -36,10 +46,11 @@ class Repository(object):
                 if os.path.islink(home_file):
                     file_status = 'ok' # linked
                 else:
-                    file_status = 'C ' # there is file in home dir, but it is not the same as one in repo
+                    file_status = 'C' # there is file in home dir, but it is not the same as one in repo
             else:
-                file_status = '! ' # there is not file in home dir, missing or deleted
-            yield {'status': file_status, 'filename': file_basename}
+                file_status = '!' # there is not file in home dir, missing or deleted
+            files.append(File(file_basename, repo_file, file_status))
+        return files
 
 class Command(object):
     def __init__(self, repo):
@@ -56,11 +67,14 @@ class Command(object):
         print_list(*args)
 
     def status(self, *args):
-        for f in self.repo.get_files():
-            print('{0} {1}'.format(f['status'], f['filename']))
+        for x in self.repo.get_files():
+            print(x)
 
     def link(self, *args):
         print_list(*args)
+        for x in [x for x in self.repo.get_files() if x.status == '!']:
+            os.symlink(x.full_filename, os.path.join(os.path.expanduser('~'), x.filename))
+            print(x.full_filename)
 
 def get_parser():
     parser = argparse.ArgumentParser(description='dots.py - DO your doTfileS')
