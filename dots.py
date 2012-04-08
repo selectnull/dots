@@ -39,7 +39,7 @@ class Repository(object):
                     file_status = 'C ' # there is file in home dir, but it is not the same as one in repo
             else:
                 file_status = '! ' # there is not file in home dir, missing or deleted
-            yield {'file_status': file_status, 'file_basename': file_basename}
+            yield {'status': file_status, 'filename': file_basename}
 
 class Command(object):
     def __init__(self, repo):
@@ -57,7 +57,7 @@ class Command(object):
 
     def status(self, *args):
         for f in self.repo.get_files():
-            print('{0} {1}'.format(f['file_status'], f['file_basename']))
+            print('{0} {1}'.format(f['status'], f['filename']))
 
     def link(self, *args):
         print_list(*args)
