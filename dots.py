@@ -1,11 +1,13 @@
 #!/usr/bin/env python
+from __future__ import print_function
 import argparse
 import os
+import sys
 
 
 def print_list(*l):
     for x in l:
-        print x
+        print(x)
 
 class Repository(object):
     def __init__(self, path):
@@ -19,31 +21,15 @@ class Repository(object):
                 return x
         return None
 
-class Command(object):
-    @classmethod
-    def is_valid(cls, command):
-        return command in ('clone', 'push', 'pull', 'status', 'link', 'unlink', ) 
-
-    def clone(self, repo, *args):
-        print repo
-        print_list(*args)
-
-    def push(self, repo, *args):
-        print_list(*args)
-
-    def pull(self, repo, *args):
-        print_list(*args)
-
-    def status(self, repo, *args):
-        #print_list(*args)
-        for fn in os.listdir(repo.path):
+    def get_files(self):
+        for fn in os.listdir(self.path):
             file_status = ''
             file_basename = os.path.basename(fn)
 
             # check if the file is .hg, .git or .bzr and skip those
-            if file_basename == repo.get_type():
+            if file_basename == self.get_type():
                 continue
-            repo_file = os.path.abspath(os.path.join(repo.path, fn))
+            repo_file = os.path.abspath(os.path.join(self.path, fn))
             home_file = os.path.abspath(os.path.join(os.path.expanduser('~'), fn))
 
             if os.path.exists(home_file):
@@ -52,13 +38,31 @@ class Command(object):
                 else:
                     file_status = 'C ' # there is file in home dir, but it is not the same as one in repo
             else:
-                file_status = 'D ' # there is not file in home dir, missing or deleted
-            print '{0} {1}'.format(file_status, file_basename)
+                file_status = '! ' # there is not file in home dir, missing or deleted
+            yield {'file_status': file_status, 'file_basename': file_basename}
 
-    def link(self, repo, *args):
+class Command(object):
+    def __init__(self, repo):
+        self.repo = repo
+
+    @classmethod
+    def is_valid(cls, command):
+        return command in ('push', 'pull', 'status', 'link', 'unlink', ) 
+
+    def push(self, *args):
         print_list(*args)
 
-def main():
+    def pull(self, *args):
+        print_list(*args)
+
+    def status(self, *args):
+        for f in self.repo.get_files():
+            print('{0} {1}'.format(f['file_status'], f['file_basename']))
+
+    def link(self, *args):
+        print_list(*args)
+
+def get_parser():
     parser = argparse.ArgumentParser(description='dots.py - DO your doTfileS')
     parser.add_argument('command')
     parser.add_argument('repository')
@@ -67,25 +71,26 @@ def main():
 
     return parser
 
-def test_parser(args):
-    print args.command
-    print args.repository
+def show_error(msg):
+    print(msg)
+    sys.exit(1)
 
 if __name__ == '__main__':
-    parser = main()
+    parser = get_parser()
     args = parser.parse_args()
 
-    assert Command.is_valid(args.command)
-    assert os.path.exists(args.repository)
+    if not Command.is_valid(args.command):
+        show_error('{0} is not a valid command'.format(args.command))
+    if not os.path.exists(args.repository):
+        show_error('{0} is not a repository'.format(args.repository))
 
-    c = Command()
+    command = Command(Repository(args.repository))
     if args.debug:
-        print 'command: ', args.command
-        print 'repo: ', args.repository
+        print('command:', args.command)
+        print('repo:', args.repository)
 
     if args.options:
-        print list(args.options)
-    getattr(c, args.command)(Repository(args.repository), *args.options)
+        print('options:', list(args.options))
 
-    #test_parser(args)
+    getattr(command, args.command)(*args.options)
 
