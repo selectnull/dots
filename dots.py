@@ -10,9 +10,10 @@ def print_list(*l):
         print(x)
 
 class File(object):
-    def __init__(self, filename, full_filename, status):
+    def __init__(self, filename, link_filename, repo_filename, status):
         self.filename = filename
-        self.full_filename = full_filename
+        self.link_filename = link_filename
+        self.repo_filename = repo_filename
         self.status = status
 
     def __str__(self):
@@ -49,7 +50,7 @@ class Repository(object):
                     file_status = 'C' # there is file in home dir, but it is not the same as one in repo
             else:
                 file_status = '!' # there is not file in home dir, missing or deleted
-            files.append(File(file_basename, repo_file, file_status))
+            files.append(File(file_basename, home_file, repo_file, file_status))
         return files
 
 class Command(object):
@@ -73,8 +74,13 @@ class Command(object):
     def link(self, *args):
         print_list(*args)
         for x in [x for x in self.repo.get_files() if x.status == '!']:
-            os.symlink(x.full_filename, os.path.join(os.path.expanduser('~'), x.filename))
-            print(x.full_filename)
+            os.symlink(x.repo_filename, x.link_filename)
+            print(u'{0} -> {1}'.format(x.link_filename, x.repo_filename))
+
+    def unlink(self, *args):
+        for x in [x for x in self.repo.get_files() if x.status == 'ok']:
+            os.unlink(x.link_filename)
+            print(u'{0} unlinked'.format(x.link_filename))
 
 def get_parser():
     parser = argparse.ArgumentParser(description='dots.py - DO your doTfileS')
