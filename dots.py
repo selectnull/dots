@@ -3,6 +3,7 @@ from __future__ import print_function
 import argparse
 import os
 import sys
+import subprocess
 
 
 def print_list(*l):
@@ -23,11 +24,10 @@ class Repository(object):
     def __init__(self, path):
         self.path = os.path.abspath(path)
 
-    def get_type(self):
+    def get_dvcs(self):
         """ returns git, hg, bzr or None for given repository """
         for x in ('.git', '.hg', '.bzr', ):
-            r = os.path.join(self.path, x)
-            if os.path.isdir(r):
+            if os.path.isdir(os.path.join(self.path, x)):
                 return x
         return None
 
@@ -38,7 +38,7 @@ class Repository(object):
             file_basename = os.path.basename(fn)
 
             # check if the file is .hg, .git or .bzr and skip those
-            if file_basename == self.get_type():
+            if file_basename == self.get_dvcs():
                 continue
             repo_file = os.path.abspath(os.path.join(self.path, fn))
             home_file = os.path.abspath(os.path.join(os.path.expanduser('~'), fn))
@@ -53,6 +53,23 @@ class Repository(object):
             files.append(File(file_basename, home_file, repo_file, file_status))
         return files
 
+class HgRepository(Repository):
+    def push(self, *args):
+        subprocess.call(['hg', 'add'])
+        subprocess.call(['hg', 'commit', '-m', '.'])
+        subprocess.call(['hg', 'push'])
+
+    def pull(self, *args):
+        subprocess.call(['hg', 'pull', '-u'])
+
+class GitRepository(Repository):
+    def push(self, *args):
+        subprocess.call(['git', 'commit', '-am', '.'])
+        subprocess.call(['git', 'push', 'origin', 'master'])
+
+    def pull(self, *args):
+        subprocess.call(['git', 'pull'])
+
 class Command(object):
     def __init__(self, repo):
         self.repo = repo
@@ -61,15 +78,17 @@ class Command(object):
     def is_valid(cls, command):
         return command in ('push', 'pull', 'status', 'link', 'unlink', ) 
 
-    def push(self, *args):
-        print_list(*args)
-
-    def pull(self, *args):
-        print_list(*args)
-
     def status(self, *args):
         for x in self.repo.get_files():
             print(x)
+
+    def push(self, *args):
+        os.chdir(self.repo.path)
+        self.repo.push(*args)
+
+    def pull(self, *args):
+        os.chdir(self.repo.path)
+        self.repo.pull(*args)
 
     def link(self, *args):
         print_list(*args)
@@ -104,7 +123,9 @@ if __name__ == '__main__':
     if not os.path.exists(args.repository):
         show_error('{0} is not a repository'.format(args.repository))
 
-    command = Command(Repository(args.repository))
+    r = Repository(args.repository).get_dvcs()[1:].capitalize()
+    RepositoryClass = globals()[r+'Repository']
+    command = Command(RepositoryClass(args.repository))
     if args.debug:
         print('command:', args.command)
         print('repo:', args.repository)
