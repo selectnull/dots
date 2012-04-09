@@ -27,14 +27,21 @@ class Repository(object):
                 return x
         return None
 
+    def should_skip_file(self, filename):
+        """ files that should be skipped are repository directory and 
+            .dots which is config file for dots.py
+        """
+        files_to_skip = [self.get_dvcs()]
+        files_to_skip.append('.dots')
+        return filename in files_to_skip
+
     def get_files(self):
         files = []
         for fn in os.listdir(self.path):
             file_status = ''
             file_basename = os.path.basename(fn)
 
-            # check if the file is .hg, .git or .bzr and skip those
-            if file_basename == self.get_dvcs():
+            if self.should_skip_file(file_basename):
                 continue
             repo_file = os.path.abspath(os.path.join(self.path, fn))
             home_file = os.path.abspath(os.path.join(os.path.expanduser('~'), fn))
