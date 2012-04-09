@@ -6,10 +6,6 @@ import sys
 import subprocess
 
 
-def print_list(*l):
-    for x in l:
-        print(x)
-
 class File(object):
     def __init__(self, filename, link_filename, repo_filename, status):
         self.filename = filename
@@ -91,7 +87,6 @@ class Command(object):
         self.repo.pull(*args)
 
     def link(self, *args):
-        print_list(*args)
         for x in [x for x in self.repo.get_files() if x.status == '!']:
             os.symlink(x.repo_filename, x.link_filename)
             print(u'{0} -> {1}'.format(x.link_filename, x.repo_filename))
