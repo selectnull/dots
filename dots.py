@@ -19,6 +19,15 @@ class File(object):
 class Repository(object):
     def __init__(self, path):
         self.path = os.path.abspath(path)
+        self.config_file = os.path.abspath(os.path.join(self.path, '.dots'))
+        self._set_config()
+
+    def _set_config(self):
+        import json
+        self.target_dir = os.path.abspath(os.path.expanduser('~'))
+        if os.path.exists(self.config_file):
+            config = json.loads(open(self.config_file).read())
+            self.target_dir = os.path.expanduser(config['target'])
 
     def get_dvcs(self):
         """ returns git, hg, bzr or None for given repository """
@@ -43,17 +52,17 @@ class Repository(object):
 
             if self.should_skip_file(file_basename):
                 continue
-            repo_file = os.path.abspath(os.path.join(self.path, fn))
-            home_file = os.path.abspath(os.path.join(os.path.expanduser('~'), fn))
+            source_file = os.path.abspath(os.path.join(self.path, fn))
+            target_file = os.path.abspath(os.path.join(self.target_dir, fn))
 
-            if os.path.exists(home_file):
-                if os.path.islink(home_file):
+            if os.path.exists(target_file):
+                if os.path.islink(target_file):
                     file_status = 'ok' # linked
                 else:
                     file_status = 'C' # there is file in home dir, but it is not the same as one in repo
             else:
                 file_status = '!' # there is not file in home dir, missing or deleted
-            files.append(File(file_basename, home_file, repo_file, file_status))
+            files.append(File(file_basename, target_file, source_file, file_status))
         return files
 
 class HgRepository(Repository):
