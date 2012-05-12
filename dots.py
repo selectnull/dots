@@ -131,28 +131,36 @@ def get_parser():
 
     return parser
 
-def show_error(msg):
+def show_error_and_exit(msg):
     print(msg)
     sys.exit(1)
+
+def show_debug(args):
+    print('command:', args.command)
+    print('repo:', args.repository)
+
+    if args.options:
+        print('options:', list(args.options))
+
+def get_repository_class(repo_path):
+    r = Repository(repo_path).get_dvcs()[1:].capitalize()
+    RepositoryClass = globals()[r+'Repository']
+    return RepositoryClass
+
 
 if __name__ == '__main__':
     parser = get_parser()
     args = parser.parse_args()
 
     if not Command.is_valid(args.command):
-        show_error('{0} is not a valid command'.format(args.command))
+        show_error_and_exit('{0} is not a valid command'.format(args.command))
     if not os.path.exists(args.repository):
-        show_error('{0} is not a repository'.format(args.repository))
+        show_error_and_exit('{0} is not a repository'.format(args.repository))
 
-    r = Repository(args.repository).get_dvcs()[1:].capitalize()
-    RepositoryClass = globals()[r+'Repository']
+    RepositoryClass = get_repository_class(args.repository)
     command = Command(RepositoryClass(args.repository))
     if args.debug:
-        print('command:', args.command)
-        print('repo:', args.repository)
-
-    if args.options:
-        print('options:', list(args.options))
+        show_debug(args)
 
     getattr(command, args.command)(*args.options)
 
