@@ -88,9 +88,9 @@ class Command(object):
 
     @classmethod
     def is_valid(cls, command):
-        return command in ('push', 'pull', 'status', 'link', 'unlink', ) 
+        return command in ('push', 'pull', 'list', 'link', 'unlink', ) 
 
-    def status(self, *args):
+    def list(self, *args):
         for x in self.repo.get_files():
             print(x)
 
