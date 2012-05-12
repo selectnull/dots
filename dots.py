@@ -74,6 +74,9 @@ class HgRepository(Repository):
     def pull(self, *args):
         subprocess.call(['hg', 'pull', '-u'])
 
+    def status(self, *args):
+        subprocess.call(['hg', 'status'])
+
 class GitRepository(Repository):
     def push(self, *args):
         subprocess.call(['git', 'commit', '-am', '.'])
@@ -82,13 +85,16 @@ class GitRepository(Repository):
     def pull(self, *args):
         subprocess.call(['git', 'pull'])
 
+    def status(self, *args):
+        subprocess.call(['git', 'status'])
+
 class Command(object):
     def __init__(self, repo):
         self.repo = repo
 
     @classmethod
     def is_valid(cls, command):
-        return command in ('push', 'pull', 'list', 'link', 'unlink', ) 
+        return command in ('push', 'pull', 'status', 'list', 'link', 'unlink', ) 
 
     def list(self, *args):
         for x in self.repo.get_files():
@@ -101,6 +107,10 @@ class Command(object):
     def pull(self, *args):
         os.chdir(self.repo.path)
         self.repo.pull(*args)
+
+    def status(self, *args):
+        os.chdir(self.repo.path)
+        self.repo.status(*args)
 
     def link(self, *args):
         for x in [x for x in self.repo.get_files() if x.status == '!']:
