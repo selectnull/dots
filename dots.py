@@ -30,8 +30,8 @@ class Repository(object):
             self.target_dir = os.path.expanduser(config['target'])
 
     def get_dvcs(self):
-        """ returns git, hg, bzr or None for given repository """
-        for x in ('.git', '.hg', '.bzr', ):
+        """ returns git, hg or None for given repository """
+        for x in ('.git', '.hg', ):
             if os.path.isdir(os.path.join(self.path, x)):
                 return x
         return None
