@@ -36,6 +36,16 @@ class Repository(object):
                 return x
         return None
 
+    def get_class(self):
+        """ returns specific Repository subclass """
+        r = self.get_dvcs()[1:].capitalize()
+        RepositoryClass = globals()[r+'Repository']
+        return RepositoryClass
+
+    def get_instance(self):
+        """ returns an instance of Repository subclass """
+        return self.get_class()(self.path)
+
     def should_skip_file(self, filename):
         """ files that should be skipped are repository directory and 
             .dots which is config file for dots.py
@@ -142,11 +152,6 @@ def show_debug(args):
     if args.options:
         print('options:', list(args.options))
 
-def get_repository_class(repo_path):
-    r = Repository(repo_path).get_dvcs()[1:].capitalize()
-    RepositoryClass = globals()[r+'Repository']
-    return RepositoryClass
-
 
 if __name__ == '__main__':
     parser = get_parser()
@@ -157,10 +162,9 @@ if __name__ == '__main__':
     if not os.path.exists(args.repository):
         show_error_and_exit('{0} is not a repository'.format(args.repository))
 
-    RepositoryClass = get_repository_class(args.repository)
-    command = Command(RepositoryClass(args.repository))
     if args.debug:
         show_debug(args)
 
+    command = Command(Repository(args.repository).get_instance())
     getattr(command, args.command)(*args.options)
 
