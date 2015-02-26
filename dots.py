@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+
 from __future__ import print_function
 import argparse
 import os
@@ -15,6 +16,7 @@ class File(object):
 
     def __str__(self):
         return '{0:<4} {1}'.format(self.status, self.filename)
+
 
 class Repository(object):
     def __init__(self, path):
@@ -47,7 +49,7 @@ class Repository(object):
         return self.get_class()(self.path)
 
     def should_skip_file(self, filename):
-        """ files that should be skipped are repository directory and 
+        """ files that should be skipped are repository directory and
             .dots which is config file for dots.py
         """
         files_to_skip = [self.get_dvcs()]
@@ -67,13 +69,20 @@ class Repository(object):
 
             if os.path.exists(target_file):
                 if os.path.islink(target_file):
-                    file_status = 'ok' # linked
+                    # linked
+                    file_status = 'ok'
                 else:
-                    file_status = 'C' # there is file in home dir, but it is not the same as one in repo
+                    # there is file in home dir,
+                    # but it is not the same as one in repo
+                    file_status = 'C'
             else:
-                file_status = '!' # there is not file in home dir, missing or deleted
-            files.append(File(file_basename, target_file, source_file, file_status))
+                # there is not file in home dir, missing or deleted
+                file_status = '!'
+            files.append(File(file_basename,
+                              target_file, source_file,
+                              file_status))
         return files
+
 
 class HgRepository(Repository):
     def push(self, *args):
@@ -87,6 +96,7 @@ class HgRepository(Repository):
     def status(self, *args):
         subprocess.call(['hg', 'status'])
 
+
 class GitRepository(Repository):
     def push(self, *args):
         subprocess.call(['git', 'commit', '-am', '.'])
@@ -98,13 +108,16 @@ class GitRepository(Repository):
     def status(self, *args):
         subprocess.call(['git', 'status'])
 
+
 class Command(object):
     def __init__(self, repo):
         self.repo = repo
 
     @classmethod
     def is_valid(cls, command):
-        return command in ('push', 'pull', 'status', 'list', 'link', 'unlink', ) 
+        return command in ('push', 'pull',
+                           'status', 'list',
+                           'link', 'unlink', )
 
     def list(self, *args):
         for x in self.repo.get_files():
@@ -132,18 +145,22 @@ class Command(object):
             os.unlink(x.link_filename)
             print(u'{0} unlinked'.format(x.link_filename))
 
+
 def get_parser():
     parser = argparse.ArgumentParser(description='dots.py - DO your doTfileS')
     parser.add_argument('command')
     parser.add_argument('repository')
     parser.add_argument('options', nargs='*')
-    parser.add_argument('--debug', action='store_true', help='Turn on debug mode')
+    parser.add_argument('--debug', action='store_true',
+                        help='Turn on debug mode')
 
     return parser
+
 
 def show_error_and_exit(msg):
     print(msg)
     sys.exit(1)
+
 
 def show_debug(args):
     print('command:', args.command)
@@ -167,4 +184,3 @@ if __name__ == '__main__':
 
     command = Command(Repository(args.repository).get_instance())
     getattr(command, args.command)(*args.options)
-
